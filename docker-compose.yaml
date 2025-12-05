@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  bingo-app:
+    build: .
+    container_name: multiplayer-bingo
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - ADMIN_USERNAME=${ADMIN_USERNAME:-admin}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin123}
+      - JWT_SECRET=${JWT_SECRET:-change-this-secret-in-production}
+      - MAX_HISTORY_SIZE=${MAX_HISTORY_SIZE:-1000}
+    restart: unless-stopped
+    volumes:
+      - ./assets:/app/assets
+      - ./data:/app/data
+    networks:
+      - bingo-network
+
+networks:
+  bingo-network:
+    driver: bridge

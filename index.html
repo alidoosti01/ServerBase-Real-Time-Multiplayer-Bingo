@@ -3,17 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Multiplayer Bingo - Real-time P2P Bingo Game</title>
+    <title>Multiplayer Bingo - Real-time Multiplayer Bingo Game</title>
     
     <!-- Primary Meta Tags -->
-    <meta name="title" content="Multiplayer Bingo - Real-time P2P Bingo Game">
-    <meta name="description" content="Play Bingo online with friends in real-time using P2P technology. No registration required, create a room and share the code to start playing!">
-    <meta name="keywords" content="multiplayer bingo, online bingo, p2p game, real-time bingo, browser game, free bingo game">
+    <meta name="title" content="Multiplayer Bingo - Real-time Multiplayer Bingo Game">
+    <meta name="description" content="Play Bingo online with friends in real-time. Admin can create rooms and players can join to play together!">
+    <meta name="keywords" content="multiplayer bingo, online bingo, real-time bingo, browser game, free bingo game">
     <meta name="author" content="Bilge Ozan Per">
     <meta name="robots" content="index, follow">
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
     <style>
         body {
             min-height: 100vh;
@@ -100,6 +100,88 @@
         @keyframes finalNumberReveal {
             0% { transform: scale(1.5); opacity: 0; }
             100% { transform: scale(1); opacity: 1; }
+        }
+        .row-win-notification {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 2000;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            animation: slideDown 0.5s ease-out;
+            min-width: 300px;
+            max-width: 90%;
+        }
+        @keyframes slideDown {
+            0% { transform: translateX(-50%) translateY(-100px); opacity: 0; }
+            100% { transform: translateX(-50%) translateY(0); opacity: 1; }
+        }
+        .row-win-content {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .row-win-icon {
+            font-size: 2.5rem;
+            animation: bounce 1s ease-in-out infinite;
+        }
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        .row-win-text {
+            color: white;
+            flex: 1;
+        }
+        .row-win-player {
+            font-size: 1.5rem;
+            font-weight: 800;
+            margin-bottom: 5px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+        }
+        .row-win-details {
+            font-size: 1.1rem;
+            font-weight: 600;
+            opacity: 0.95;
+        }
+        .game-over-notification {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 3000;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            padding: 40px 50px;
+            border-radius: 20px;
+            box-shadow: 0 15px 50px rgba(0, 0, 0, 0.4);
+            animation: gameOverReveal 0.8s ease-out;
+            min-width: 400px;
+            max-width: 90%;
+            text-align: center;
+        }
+        @keyframes gameOverReveal {
+            0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
+            100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+        }
+        .game-over-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+        .game-over-icon {
+            font-size: 4rem;
+            animation: bounce 1s ease-in-out infinite;
+        }
+        .game-over-text {
+            color: white;
+            font-size: 1.8rem;
+            font-weight: 800;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+            line-height: 1.4;
         }
         #connectionInfo {
             background: rgba(255, 255, 255, 0.95);
@@ -211,6 +293,12 @@
         .input-group .btn {
             border-radius: 0 12px 12px 0;
         }
+        #playerName {
+            border-radius: 12px;
+            padding: 12px 20px;
+            font-size: 1rem;
+            border: 2px solid #e2e8f0;
+        }
         h1.display-4 {
             color: white;
             font-weight: 800;
@@ -277,6 +365,57 @@
         }
         .game-started .card {
             display: none;
+        }
+        .admin-login {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 25px;
+            border-radius: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .admin-badge {
+            display: inline-block;
+            padding: 5px 15px;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+        .player-card-item {
+            display: inline-block;
+            padding: 8px 15px;
+            margin: 5px;
+            background: rgba(102, 126, 234, 0.1);
+            border-radius: 10px;
+            color: #4a5568;
+            font-weight: 500;
+        }
+        .player-card-item.you {
+            background: rgba(102, 126, 234, 0.3);
+            font-weight: 700;
+        }
+        #adminPlayersView .player-bingo-card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 20px;
+            margin: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+        #adminPlayersView .player-bingo-card h5 {
+            color: #4a5568;
+            margin-bottom: 15px;
+            text-align: center;
+            font-weight: 700;
+        }
+        #adminPlayersView .number-cell {
+            width: 50px;
+            height: 50px;
+            font-size: 1.2rem;
+            margin: 4px;
         }
         @media (max-width: 768px) {
             .container {
@@ -381,10 +520,10 @@
             
             <div id="connectionInfo" class="mb-4">
                 <div class="row justify-content-center">
-                    <div class="col-md-6 mb-3">
+                    <div id="createRoomCard" class="col-md-6 mb-3" style="display: none;">
                         <div class="card h-100">
                             <div class="card-body text-center">
-                                <h3>Create New Room</h3>
+                                <h3>Create New Room <span id="adminBadge" class="admin-badge">ADMIN</span></h3>
                                 <button id="createRoom" class="btn btn-primary btn-lg">Create Room</button>
                             </div>
                         </div>
@@ -394,9 +533,12 @@
                             <div class="card-body text-center">
                                 <div id="joinControls">
                                     <h3>Join Room</h3>
-                                    <div class="input-group mb-3 mx-auto">
-                                        <input type="text" id="joinRoomId" class="form-control" placeholder="Enter Room Code">
-                                        <button id="joinRoom" class="btn btn-success">Join</button>
+                                    <div class="mb-3">
+                                        <input type="text" id="playerName" class="form-control mb-3" placeholder="Enter Your Name" maxlength="20">
+                                        <div class="input-group mx-auto">
+                                            <input type="text" id="joinRoomId" class="form-control" placeholder="Enter Room Code" maxlength="6">
+                                            <button id="joinRoom" class="btn btn-success">Join</button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -412,8 +554,38 @@
             </div>
         </div>
 
-        <div class="bingo-card">
+        <!-- Player Info (for regular players) -->
+        <div id="playerInfo" class="mb-4" style="display: none;">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h4>Players in Room</h4>
+                    <div id="playersList" class="mb-3"></div>
+                    <div class="player-count">
+                        <strong>Total Players: <span id="totalPlayerCount">1</span></strong>
+                    </div>
+                    <div class="mt-3">
+                        <strong>Your Name: <span id="myPlayerName" class="text-primary"></span></strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bingo Card (for regular players only, hidden for admin) -->
+        <div id="playerBingoCard" class="bingo-card">
             <div id="bingoGrid" class="d-flex flex-wrap justify-content-center">
+                <!-- Will be filled with JavaScript -->
+            </div>
+        </div>
+
+        <!-- Admin View: All Players' Bingo Cards -->
+        <div id="adminPlayersView" style="display: none;">
+            <div class="text-center mb-4">
+                <h3 style="color: white;">Players' Bingo Cards</h3>
+                <div class="player-count" style="color: white; font-size: 1.2rem; margin-top: 10px;">
+                    <strong>Players: <span id="adminPlayerCount">0</span></strong>
+                </div>
+            </div>
+            <div id="allPlayersCards" class="row">
                 <!-- Will be filled with JavaScript -->
             </div>
         </div>
@@ -426,6 +598,25 @@
         <div class="draw-animation-container">
             <div class="draw-animation"></div>
         </div>
+
+        <!-- Row Completion Notification -->
+        <div id="rowWinNotification" class="row-win-notification" style="display: none;">
+            <div class="row-win-content">
+                <div class="row-win-icon">🎉</div>
+                <div class="row-win-text">
+                    <div class="row-win-player"></div>
+                    <div class="row-win-details"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Game Over Notification -->
+        <div id="gameOverNotification" class="game-over-notification" style="display: none;">
+            <div class="game-over-content">
+                <div class="game-over-icon">🏆</div>
+                <div class="game-over-text"></div>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -436,25 +627,320 @@
             const createRoomBtn = document.getElementById('createRoom');
             const joinRoomBtn = document.getElementById('joinRoom');
             const joinRoomInput = document.getElementById('joinRoomId');
+            const playerNameInput = document.getElementById('playerName');
             const hostControls = document.getElementById('hostControls');
             const joinControls = document.getElementById('joinControls');
             const roomIdSpan = document.getElementById('roomId');
             const playerCountSpan = document.getElementById('playerCount');
             const errorMessage = document.getElementById('errorMessage');
             const connectionStatus = document.getElementById('connectionStatus');
+            const adminBadge = document.getElementById('adminBadge');
+            const createRoomCard = document.getElementById('createRoomCard');
+            const playerInfo = document.getElementById('playerInfo');
+            const playersList = document.getElementById('playersList');
+            const totalPlayerCount = document.getElementById('totalPlayerCount');
+            const myPlayerName = document.getElementById('myPlayerName');
+            const playerBingoCard = document.getElementById('playerBingoCard');
+            const adminPlayersView = document.getElementById('adminPlayersView');
+            const allPlayersCards = document.getElementById('allPlayersCards');
 
             let numbers = [];
             let drawnNumbers = new Set();
-            let peer = null;
-            let connections = [];
+            let socket = null;
+            let isAdmin = false;
             let isHost = false;
-            let currentConnection = null;
+            let currentRoomId = null;
+            let myPlayerNameValue = '';
+            let myPlayerId = null;
+            let playersInRoom = new Map(); // playerId -> { name, bingoCard }
 
-            function generateRoomCode() {
-                // Simple method to shorten PeerJS ID
-                const timestamp = Date.now().toString(36); // Convert time to base 36 string
-                const random = Math.random().toString(36).substring(2, 5); // 3 character random string
-                return (timestamp.slice(-3) + random).toUpperCase(); // Last 6 characters
+            // Check if user is admin from sessionStorage
+            function checkAdminStatus() {
+                const adminStatus = sessionStorage.getItem('isAdmin');
+                if (adminStatus === 'true') {
+                    isAdmin = true;
+                    adminBadge.style.display = 'inline-block';
+                    createRoomCard.style.display = 'block';
+                    createRoomBtn.style.display = 'block';
+                } else {
+                    isAdmin = false;
+                    adminBadge.style.display = 'none';
+                    createRoomCard.style.display = 'none';
+                    createRoomBtn.style.display = 'none';
+                }
+            }
+
+            // Initialize Socket.io connection
+            function initializeSocket() {
+                socket = io();
+                
+                socket.on('connect', () => {
+                    updateConnectionStatus('Connected to server', true);
+                    
+                    // If admin status exists in sessionStorage, re-authenticate with server
+                    if (sessionStorage.getItem('isAdmin') === 'true') {
+                        const adminUsername = sessionStorage.getItem('adminUsername');
+                        const adminPassword = sessionStorage.getItem('adminPassword');
+                        if (adminUsername && adminPassword) {
+                            socket.emit('admin:login', { 
+                                username: adminUsername, 
+                                password: adminPassword 
+                            });
+                        } else {
+                            // Clear invalid admin status
+                            sessionStorage.removeItem('isAdmin');
+                            checkAdminStatus();
+                        }
+                    }
+                });
+
+                socket.on('disconnect', () => {
+                    updateConnectionStatus('Disconnected from server', false);
+                });
+
+                socket.on('error', (data) => {
+                    showError(data.message);
+                });
+
+                socket.on('admin:loginSuccess', (data) => {
+                    isAdmin = data.isAdmin;
+                    sessionStorage.setItem('isAdmin', 'true');
+                    checkAdminStatus();
+                    updateConnectionStatus('Logged in as admin', true);
+                    
+                    // If we have a stored admin room ID, reconnect to it
+                    const storedAdminRoomId = sessionStorage.getItem('adminRoomId');
+                    if (storedAdminRoomId && !document.body.classList.contains('game-started')) {
+                        setTimeout(() => {
+                            if (createRoomBtn) {
+                                createRoomBtn.click();
+                            }
+                        }, 500);
+                    }
+                });
+
+                socket.on('admin:loginError', (data) => {
+                    showError(data.message);
+                    sessionStorage.removeItem('isAdmin');
+                    sessionStorage.removeItem('adminUsername');
+                    sessionStorage.removeItem('adminPassword');
+                    checkAdminStatus();
+                });
+
+                socket.on('room:created', (data) => {
+                    currentRoomId = data.roomId;
+                    isHost = true;
+                    isAdmin = true;
+                    roomIdSpan.textContent = data.roomId;
+                    playerCountSpan.textContent = data.playerCount;
+                    document.body.classList.add('game-started', 'is-host');
+                    joinControls.style.display = 'none';
+                    drawButton.style.display = 'block';
+                    hostControls.style.display = 'flex';
+                    hostControls.style.flexDirection = 'column';
+                    hostControls.style.alignItems = 'center';
+                    playerBingoCard.style.display = 'none';
+                    adminPlayersView.style.display = 'block';
+                    playerInfo.style.display = 'none';
+                    
+                    // Store admin room ID and status for reconnection
+                    sessionStorage.setItem('adminRoomId', data.roomId);
+                    sessionStorage.setItem('isAdmin', 'true');
+                    
+                    // Restore drawn numbers if reconnecting
+                    if (data.reconnected && data.drawnNumbers && data.drawnNumbers.length > 0) {
+                        data.drawnNumbers.forEach(num => {
+                            drawnNumbers.add(num);
+                        });
+                        renderDrawnNumbers();
+                        if (data.drawnNumbers.length > 0) {
+                            lastDrawnSpan.textContent = data.drawnNumbers[data.drawnNumbers.length - 1];
+                        }
+                    }
+                    
+                    // Add admin to players list
+                    const adminUsername = sessionStorage.getItem('adminUsername') || 'Admin';
+                    playersInRoom.set(socket.id, { name: adminUsername, bingoCard: null });
+                    const adminPlayerCountEl = document.getElementById('adminPlayerCount');
+                    if (adminPlayerCountEl) {
+                        adminPlayerCountEl.textContent = data.playerCount;
+                    }
+                    updateConnectionStatus('Room created', true);
+                });
+
+                socket.on('room:joined', (data) => {
+                    currentRoomId = data.roomId;
+                    myPlayerId = data.playerId;
+                    playerCountSpan.textContent = data.playerCount;
+                    totalPlayerCount.textContent = data.playerCount;
+                    document.body.classList.add('game-started');
+                    
+                    // Store player state
+                    sessionStorage.setItem('playerRoomId', data.roomId);
+                    sessionStorage.setItem('playerId', data.playerId);
+                    sessionStorage.setItem('playerName', data.playerName || myPlayerNameValue);
+                    
+                    if (data.isAdmin) {
+                        isHost = true;
+                        isAdmin = true;
+                        drawButton.style.display = 'block';
+                        document.body.classList.add('is-host');
+                        playerBingoCard.style.display = 'none';
+                        adminPlayersView.style.display = 'block';
+                        playerInfo.style.display = 'none';
+                    } else {
+                        playerInfo.style.display = 'none';
+                        playerBingoCard.style.display = 'block';
+                        adminPlayersView.style.display = 'none';
+                        myPlayerName.textContent = data.playerName || myPlayerNameValue;
+                        // Add self to players list
+                        playersInRoom.set(data.playerId, { name: data.playerName || myPlayerNameValue, bingoCard: null });
+                    }
+                    updateConnectionStatus('Joined room', true);
+                    
+                    // Restore drawn numbers
+                    if (data.drawnNumbers && data.drawnNumbers.length > 0) {
+                        data.drawnNumbers.forEach(num => {
+                            drawnNumbers.add(num);
+                        });
+                        renderDrawnNumbers();
+                        if (data.drawnNumbers.length > 0) {
+                            lastDrawnSpan.textContent = data.drawnNumbers[data.drawnNumbers.length - 1];
+                        }
+                    }
+                    
+                    // Restore or generate bingo card
+                    if (!isAdmin) {
+                        if (data.bingoCard && data.bingoCard.length > 0) {
+                            // Restore existing bingo card from server
+                            numbers = data.bingoCard;
+                            sessionStorage.setItem('playerBingoCard', JSON.stringify(numbers));
+                            renderBingoCard();
+                            // Mark numbers that were already drawn
+                            data.drawnNumbers.forEach(num => {
+                                drawnNumbers.add(num);
+                            });
+                            renderBingoCard();
+                        } else {
+                            // Generate new bingo card only if one doesn't exist
+                            generateBingoCard();
+                            sessionStorage.setItem('playerBingoCard', JSON.stringify(numbers));
+                            socket.emit('player:bingoCard', {
+                                roomId: currentRoomId,
+                                playerId: myPlayerId,
+                                bingoCard: numbers
+                            });
+                        }
+                    }
+                });
+
+                socket.on('player:joined', (data) => {
+                    playerCountSpan.textContent = data.playerCount;
+                    totalPlayerCount.textContent = data.playerCount;
+                    if (isAdmin) {
+                        const adminPlayerCountEl = document.getElementById('adminPlayerCount');
+                        if (adminPlayerCountEl) {
+                            adminPlayerCountEl.textContent = data.playerCount;
+                        }
+                    }
+                    if (data.playerName && data.playerId) {
+                        playersInRoom.set(data.playerId, { name: data.playerName, bingoCard: null });
+                    }
+                    if (data.playerName) {
+                        updateConnectionStatus(`${data.playerName} joined`, true);
+                    } else {
+                        updateConnectionStatus('New player joined', true);
+                    }
+                    if (isAdmin) {
+                        updateAdminPlayersView();
+                    } else {
+                        updatePlayersList();
+                    }
+                });
+
+                socket.on('player:left', (data) => {
+                    playerCountSpan.textContent = data.playerCount;
+                    totalPlayerCount.textContent = data.playerCount;
+                    if (isAdmin) {
+                        const adminPlayerCountEl = document.getElementById('adminPlayerCount');
+                        if (adminPlayerCountEl) {
+                            adminPlayerCountEl.textContent = data.playerCount;
+                        }
+                    }
+                    let playerName = '';
+                    if (data.playerId) {
+                        const player = playersInRoom.get(data.playerId);
+                        if (player) {
+                            playerName = player.name;
+                        }
+                        playersInRoom.delete(data.playerId);
+                    }
+                    if (playerName) {
+                        updateConnectionStatus(`${playerName} left`, true);
+                    } else if (data.playerName) {
+                        updateConnectionStatus(`${data.playerName} left`, true);
+                    } else {
+                        updateConnectionStatus('Player left', true);
+                    }
+                    if (isAdmin) {
+                        updateAdminPlayersView();
+                    } else {
+                        updatePlayersList();
+                    }
+                });
+
+                socket.on('player:bingoCard', (data) => {
+                    // Admin receives player's bingo card
+                    if (isAdmin && data.playerId && data.bingoCard) {
+                        const player = playersInRoom.get(data.playerId);
+                        if (player) {
+                            player.bingoCard = data.bingoCard;
+                            updateAdminPlayersView();
+                        }
+                    }
+                });
+
+                socket.on('room:playersList', (data) => {
+                    // Receive all players in room
+                    if (data.players) {
+                        playersInRoom.clear();
+                        data.players.forEach(player => {
+                            playersInRoom.set(player.playerId, { 
+                                name: player.name, 
+                                bingoCard: player.bingoCard || null 
+                            });
+                        });
+                        if (isAdmin) {
+                            updateAdminPlayersView();
+                        } else {
+                            updatePlayersList();
+                        }
+                    }
+                });
+
+                socket.on('game:numberDrawn', (data) => {
+                    showNumberDrawAnimation(data.number, data.startTime, !isHost);
+                    // Update drawn numbers from server
+                    if (data.drawnNumbers) {
+                        drawnNumbers = new Set(data.drawnNumbers);
+                    }
+                    // Update views
+                    if (isAdmin) {
+                        updateAdminPlayersView();
+                    } else {
+                        renderBingoCard();
+                    }
+                    renderDrawnNumbers();
+                });
+
+                socket.on('game:rowCompleted', (data) => {
+                    showRowWinNotification(data.playerName, data.rowNumber, data.numbers);
+                });
+
+                socket.on('room:closed', (data) => {
+                    showError(data.message);
+                    resetGame();
+                });
             }
 
             function showError(message) {
@@ -465,68 +951,94 @@
                 }, 5000);
             }
 
+            function showRowWinNotification(playerName, rowNumber, numbers) {
+                const notification = document.getElementById('rowWinNotification');
+                const playerNameEl = notification.querySelector('.row-win-player');
+                const detailsEl = notification.querySelector('.row-win-details');
+                
+                playerNameEl.textContent = `${playerName} Win!`;
+                detailsEl.textContent = `Row ${rowNumber} numbers: ${numbers.join(', ')}`;
+                
+                notification.style.display = 'block';
+                
+                // Show game over notification after 5 seconds
+                setTimeout(() => {
+                    showGameOverNotification(playerName);
+                }, 5000);
+                
+                // Hide row notification after 15 seconds
+                setTimeout(() => {
+                    notification.style.display = 'none';
+                }, 15000);
+            }
+
+            function showGameOverNotification(winnerName) {
+                const gameOverNotification = document.getElementById('gameOverNotification');
+                const gameOverText = gameOverNotification.querySelector('.game-over-text');
+                
+                gameOverText.textContent = `The winner is ${winnerName} and game is done.`;
+                gameOverNotification.style.display = 'block';
+                
+                // Disable draw button if admin
+                if (isAdmin && drawButton) {
+                    drawButton.disabled = true;
+                    drawButton.style.opacity = '0.5';
+                    drawButton.style.cursor = 'not-allowed';
+                }
+                
+                // Close room and redirect to home page after 5 seconds
+                setTimeout(() => {
+                    // Notify server to close the room
+                    if (socket && currentRoomId) {
+                        socket.emit('room:close', { roomId: currentRoomId });
+                    }
+                    // Redirect to home page
+                    setTimeout(() => {
+                        window.location.href = '/';
+                    }, 1000);
+                }, 5000);
+            }
+
             function updateConnectionStatus(status, isConnected) {
                 connectionStatus.style.display = 'block';
                 connectionStatus.textContent = status;
                 connectionStatus.className = 'connection-status ' + (isConnected ? 'connected' : 'disconnected');
             }
 
-            // Initialize PeerJS connection
-            function initializePeer(isCreatingRoom = false) {
-                if (peer) {
-                    peer.destroy();
-                }
-
-                if (isCreatingRoom) {
-                    // Use short code as PeerJS ID when creating room
-                    const roomCode = generateRoomCode();
-                    roomIdSpan.textContent = roomCode; // Show room code first
-                    
-                    peer = new Peer(roomCode, {
-                        debug: 2
-                    });
-                    
-                    peer.on('open', function(id) {
-                        console.log('Connection ID:', id);
-                        updateConnectionStatus('Room created and connection ready', true);
-                        hostControls.style.display = 'flex';
-                        hostControls.style.flexDirection = 'column';
-                        hostControls.style.alignItems = 'center';
-                    });
-                } else {
-                    // Use temporary ID when joining room
-                    peer = new Peer(null, {
-                        debug: 2
-                    });
-                }
-
-                peer.on('error', function(err) {
-                    console.error('Connection error:', err);
-                    updateConnectionStatus('Connection error: ' + err.type, false);
-                    showError('Connection error occurred. Please try again.');
-                });
-
-                peer.on('connection', function(conn) {
-                    handleNewConnection(conn);
-                });
-
-                peer.on('disconnected', function() {
-                    updateConnectionStatus('Connection lost', false);
-                });
+            function resetGame() {
+                document.body.classList.remove('game-started', 'is-host');
+                joinControls.style.display = 'block';
+                drawButton.style.display = 'none';
+                hostControls.style.display = 'none';
+                currentRoomId = null;
+                isHost = false;
+                drawnNumbers.clear();
+                renderBingoCard();
+                renderDrawnNumbers();
+                lastDrawnSpan.textContent = '-';
             }
 
-            // Create new room
+
+            // Create new room (admin only)
             createRoomBtn.addEventListener('click', function() {
-                isHost = true;
-                document.body.classList.add('game-started', 'is-host');
-                joinControls.style.display = 'none';
-                drawButton.style.display = 'block';
-                initializePeer(true);
+                if (!socket) {
+                    initializeSocket();
+                }
+                // Check if reconnecting to existing room
+                const storedRoomId = sessionStorage.getItem('adminRoomId');
+                socket.emit('room:create', { roomId: storedRoomId });
             });
 
             // Join room
             joinRoomBtn.addEventListener('click', function() {
                 const roomCode = joinRoomInput.value.trim().toUpperCase();
+                const playerName = playerNameInput.value.trim();
+                
+                if (!playerName) {
+                    showError('Please enter your name');
+                    return;
+                }
+
                 if (!roomCode) {
                     showError('Please enter a room code');
                     return;
@@ -537,69 +1049,96 @@
                     return;
                 }
 
-                initializePeer(false);
-                
-                peer.on('open', function() {
-                    const conn = peer.connect(roomCode, {
-                        reliable: true
-                    });
+                if (playerName.length > 20) {
+                    showError('Name must be 20 characters or less');
+                    return;
+                }
 
-                    conn.on('open', function() {
-                        console.log('Connected to room');
-                        currentConnection = conn;
-                        document.body.classList.add('game-started');
-                        updateConnectionStatus('Connected to room', true);
-                        handleConnection(conn);
-                    });
+                if (!socket) {
+                    initializeSocket();
+                }
 
-                    conn.on('error', function(err) {
-                        showError('Connection error: ' + err);
-                        updateConnectionStatus('Connection error', false);
-                    });
-
-                    conn.on('close', function() {
-                        updateConnectionStatus('Connection closed', false);
-                    });
+                myPlayerNameValue = playerName;
+                // Get stored player ID if reconnecting
+                const storedPlayerId = sessionStorage.getItem('playerId');
+                socket.emit('room:join', { 
+                    roomId: roomCode, 
+                    playerName: playerName,
+                    playerSessionId: storedPlayerId
                 });
             });
 
-            // Handle new connection (for Host)
-            function handleNewConnection(conn) {
-                connections.push(conn);
-                playerCountSpan.textContent = connections.length + 1;
-                updateConnectionStatus('New player connected', true);
-
-                conn.on('open', function() {
-                    console.log('New player connected');
-                    // Send existing drawn numbers to new player
-                    drawnNumbers.forEach(number => {
-                        conn.send({
-                            type: 'drawnNumber',
-                            number: number
-                        });
-                    });
-                });
-
-                conn.on('close', function() {
-                    const index = connections.indexOf(conn);
-                    if (index > -1) {
-                        connections.splice(index, 1);
-                        playerCountSpan.textContent = connections.length + 1;
+            // Update players list for regular players
+            function updatePlayersList() {
+                playersList.innerHTML = '';
+                playersInRoom.forEach((player, playerId) => {
+                    const playerDiv = document.createElement('span');
+                    playerDiv.className = 'player-card-item';
+                    if (playerId === socket.id) {
+                        playerDiv.classList.add('you');
+                        playerDiv.textContent = player.name + ' (You)';
+                    } else {
+                        playerDiv.textContent = player.name;
                     }
-                    updateConnectionStatus('A player left', true);
+                    playersList.appendChild(playerDiv);
                 });
-
-                handleConnection(conn);
+                totalPlayerCount.textContent = playersInRoom.size;
             }
 
-            // Connection operations
-            function handleConnection(conn) {
-                conn.on('data', function(data) {
-                    if (data.type === 'drawnNumber') {
-                        const number = data.number;
-                        const startTime = data.startTime;
-                        showNumberDrawAnimation(number, startTime, true);
+            // Update admin view with all players' bingo cards
+            function updateAdminPlayersView() {
+                allPlayersCards.innerHTML = '';
+                const adminPlayerCountEl = document.getElementById('adminPlayerCount');
+                if (adminPlayerCountEl) {
+                    adminPlayerCountEl.textContent = playersInRoom.size;
+                }
+                
+                playersInRoom.forEach((player, playerId) => {
+                    // Only show cards that have bingo cards
+                    if (!player.bingoCard || player.bingoCard.length === 0) {
+                        return;
                     }
+                    
+                    const colDiv = document.createElement('div');
+                    colDiv.className = 'col-md-6 col-lg-4';
+                    
+                    const cardDiv = document.createElement('div');
+                    cardDiv.className = 'player-bingo-card';
+                    
+                    const nameH5 = document.createElement('h5');
+                    nameH5.textContent = player.name;
+                    cardDiv.appendChild(nameH5);
+                    
+                    const gridDiv = document.createElement('div');
+                    gridDiv.className = 'd-flex flex-wrap justify-content-center';
+                    
+                    player.bingoCard.forEach(row => {
+                        const rowDiv = document.createElement('div');
+                        rowDiv.className = 'd-flex justify-content-center w-100';
+                        
+                        row.forEach((number, index) => {
+                            const cell = document.createElement('div');
+                            cell.className = 'number-cell';
+                            
+                            if (number !== null) {
+                                cell.textContent = number;
+                                if (drawnNumbers.has(number)) {
+                                    cell.classList.add('marked');
+                                }
+                            } else {
+                                cell.style.backgroundColor = '#f8f9fa';
+                                cell.style.border = '2px dashed #dee2e6';
+                            }
+                            
+                            rowDiv.appendChild(cell);
+                        });
+                        
+                        gridDiv.appendChild(rowDiv);
+                    });
+                    
+                    cardDiv.appendChild(gridDiv);
+                    colDiv.appendChild(cardDiv);
+                    allPlayersCards.appendChild(colDiv);
                 });
             }
 
@@ -652,7 +1191,11 @@
                             // Save and display number
                             drawnNumbers.add(finalNumber);
                             lastDrawnSpan.textContent = finalNumber;
-                            renderBingoCard();
+                            if (isAdmin) {
+                                updateAdminPlayersView();
+                            } else {
+                                renderBingoCard();
+                            }
                             renderDrawnNumbers();
 
                             if (!isReceived) {
@@ -729,10 +1272,9 @@
                 const drawnNumbersList = document.getElementById('drawnNumbersList');
                 drawnNumbersList.innerHTML = '';
                 
-                // Son 15 sayıyı göster
+                // Show all drawn numbers
                 Array.from(drawnNumbers)
-                    .slice(-15)
-                    .reverse()
+                    .sort((a, b) => a - b)
                     .forEach(number => {
                         const numberDiv = document.createElement('div');
                         numberDiv.className = 'drawn-number-item';
@@ -743,41 +1285,204 @@
 
             // Drawing number operation
             drawButton.addEventListener('click', async function() {
-                if (!isHost) return;
+                if (!isHost || !socket) return;
                 
-                if (drawnNumbers.size >= 90) {
-                    alert('All numbers have been drawn!');
-                    return;
-                }
-
-                drawButton.disabled = true;
-
-                // Rastgele sayı seç
-                let finalNumber;
-                do {
-                    finalNumber = Math.floor(Math.random() * 90) + 1;
-                } while (drawnNumbers.has(finalNumber));
-
-                // Set animation start time (500ms later)
-                const startTime = Date.now() + 500;
-
-                // First send to other players
-                connections.forEach(conn => {
-                    if (conn.open) {
-                        conn.send({
-                            type: 'drawnNumber',
-                            number: finalNumber,
-                            startTime: startTime
-                        });
-                    }
-                });
-
-                // Then start our own animation
-                showNumberDrawAnimation(finalNumber, startTime, false);
+                socket.emit('game:drawNumber');
             });
 
-            // Start game
-            generateBingoCard();
+            // Show number drawing animation
+            async function showNumberDrawAnimation(finalNumber, startTime, isReceived = false) {
+                const animationContainer = document.querySelector('.draw-animation-container');
+                const animationElement = document.querySelector('.draw-animation');
+                
+                if (!isReceived) {
+                    drawButton.disabled = true;
+                }
+                
+                animationContainer.style.display = 'flex';
+
+                const now = Date.now();
+                const delay = startTime - now;
+                
+                if (delay > 0) {
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                }
+
+                const animationDuration = 300;
+                const endTime = startTime + animationDuration;
+
+                function updateAnimation() {
+                    const currentTime = Date.now();
+
+                    if (currentTime < endTime) {
+                        let tempNumber;
+                        do {
+                            tempNumber = Math.floor(Math.random() * 90) + 1;
+                        } while (drawnNumbers.has(tempNumber));
+
+                        animationElement.textContent = tempNumber;
+                        requestAnimationFrame(updateAnimation);
+                    } else {
+                        animationElement.textContent = finalNumber;
+                        animationElement.classList.add('final-number');
+
+                        setTimeout(() => {
+                            animationContainer.style.display = 'none';
+                            animationElement.classList.remove('final-number');
+                            
+                            drawnNumbers.add(finalNumber);
+                            lastDrawnSpan.textContent = finalNumber;
+                            renderBingoCard();
+                            renderDrawnNumbers();
+
+                            if (!isReceived) {
+                                drawButton.disabled = false;
+                            }
+                        }, 1000);
+                    }
+                }
+
+                updateAnimation();
+            }
+
+            // Generate random bingo card
+            function generateBingoCard() {
+                numbers = [];
+                for (let row = 0; row < 3; row++) {
+                    let availableColumns = [0, 1, 2, 3, 4, 5, 6, 7, 8];
+                    let selectedColumns = [];
+                    
+                    for (let i = 0; i < 5; i++) {
+                        const randomIndex = Math.floor(Math.random() * availableColumns.length);
+                        selectedColumns.push(availableColumns[randomIndex]);
+                        availableColumns.splice(randomIndex, 1);
+                    }
+                    
+                    selectedColumns.sort((a, b) => a - b);
+                    
+                    let rowNumbers = new Array(9).fill(null);
+                    
+                    selectedColumns.forEach(col => {
+                        let min = col * 10;
+                        let max = col === 8 ? 90 : (col + 1) * 10 - 1;
+                        let number = Math.floor(Math.random() * (max - min + 1)) + min;
+                        rowNumbers[col] = number;
+                    });
+                    
+                    numbers.push(rowNumbers);
+                }
+                renderBingoCard();
+            }
+
+            // Draw bingo card on screen
+            function renderBingoCard() {
+                bingoGrid.innerHTML = '';
+                numbers.forEach(row => {
+                    const rowDiv = document.createElement('div');
+                    rowDiv.className = 'd-flex justify-content-center w-100';
+                    
+                    row.forEach((number, index) => {
+                        const cell = document.createElement('div');
+                        cell.className = 'number-cell';
+                        
+                        if (number !== null) {
+                            cell.textContent = number;
+                            if (drawnNumbers.has(number)) {
+                                cell.classList.add('marked');
+                            }
+                        } else {
+                            cell.style.backgroundColor = '#f8f9fa';
+                            cell.style.border = '2px dashed #dee2e6';
+                        }
+                        
+                        rowDiv.appendChild(cell);
+                    });
+                    
+                    bingoGrid.appendChild(rowDiv);
+                });
+            }
+
+            function renderDrawnNumbers() {
+                const drawnNumbersList = document.getElementById('drawnNumbersList');
+                drawnNumbersList.innerHTML = '';
+                
+                // Show all drawn numbers
+                Array.from(drawnNumbers)
+                    .sort((a, b) => a - b)
+                    .forEach(number => {
+                        const numberDiv = document.createElement('div');
+                        numberDiv.className = 'drawn-number-item';
+                        numberDiv.textContent = number;
+                        drawnNumbersList.appendChild(numberDiv);
+                    });
+            }
+
+            // Check admin status on page load
+            checkAdminStatus();
+            
+            // Try to restore player state on page load
+            const storedRoomId = sessionStorage.getItem('playerRoomId');
+            const storedPlayerName = sessionStorage.getItem('playerName');
+            const storedPlayerId = sessionStorage.getItem('playerId');
+            const storedBingoCard = sessionStorage.getItem('playerBingoCard');
+            const storedAdminRoomId = sessionStorage.getItem('adminRoomId');
+            
+            if (storedRoomId && storedPlayerName && !isAdmin) {
+                // Auto-join previous room
+                myPlayerNameValue = storedPlayerName;
+                myPlayerId = storedPlayerId;
+                if (storedBingoCard) {
+                    try {
+                        numbers = JSON.parse(storedBingoCard);
+                    } catch (e) {
+                        console.error('Error parsing stored bingo card:', e);
+                    }
+                }
+                playerNameInput.value = storedPlayerName;
+                joinRoomInput.value = storedRoomId;
+            }
+            
+            // Initialize socket on page load
+            initializeSocket();
+            
+            // Auto-reconnect admin to their room if exists
+            if (isAdmin && storedAdminRoomId) {
+                socket.on('connect', () => {
+                    // First authenticate as admin
+                    const adminUsername = sessionStorage.getItem('adminUsername');
+                    const adminPassword = sessionStorage.getItem('adminPassword');
+                    if (adminUsername && adminPassword) {
+                        socket.emit('admin:login', { 
+                            username: adminUsername, 
+                            password: adminPassword 
+                        });
+                    }
+                    // Then reconnect to room
+                    setTimeout(() => {
+                        if (createRoomBtn && !document.body.classList.contains('game-started')) {
+                            createRoomBtn.click();
+                        }
+                    }, 1000);
+                });
+            }
+            
+            // Auto-join if state exists (for players)
+            if (storedRoomId && storedPlayerName && !isAdmin) {
+                socket.on('connect', () => {
+                    setTimeout(() => {
+                        if (joinRoomBtn && !document.body.classList.contains('game-started')) {
+                            joinRoomBtn.click();
+                        }
+                    }, 500);
+                });
+            }
+            
+            // Start game (only if no stored card)
+            if (!storedBingoCard) {
+                generateBingoCard();
+            } else {
+                renderBingoCard();
+            }
             renderDrawnNumbers();
         });
     </script>
